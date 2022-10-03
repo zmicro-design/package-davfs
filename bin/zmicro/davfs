@@ -9,8 +9,10 @@ help() {
   echo "  zmicro davfs unmount /data/custom_path"
   echo ""
   echo "Config:"
-  echo "  Add the following to /etc/davfs2/secrets:"
-  echo "    http://192.168.31.205:5005/custom_path username password"
+  echo "  Add Web Dav Username and Password to $(color::red /etc/davfs2/secrets)"
+  echo "  Syntax: <webdav_url> <username> <password>"
+  echo "  Example: "
+  echo "    http://192.168.31.205:5005/custom_path test_user test_password"
 }
 
 core() {
@@ -18,14 +20,27 @@ core() {
   local args=${@:2}
 
   case $action in
-  "mount")
-    sudo mount.davfs "$@" -o uid=$UID,gid=$GID
+  mount)
+    if [ -z "$UID" ]; then
+      export UID=$(id -u)
+    fi
+
+    if [ -z "$GID" ]; then
+      export GID=$(id -g)
+    fi
+
+    sudo mount.davfs -o uid=$UID,gid=$GID $args
     ;;
-  "umount")
-    sudo umount.davfs "$@"
+  umount)
+    sudo umount.davfs $args
+    ;;
+  -h | --help)
+    help
+    exit 0
     ;;
   *)
-    log::error "unknown action: $action in mount,umount"
+    log::error "unknown action: $action"
+    help
     exit 1
     ;;
   esac
